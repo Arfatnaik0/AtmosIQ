@@ -60,6 +60,7 @@ def extract_from_redis():
         'PM10(rolling_mean_3)':round(float(df['pm10'].iloc[-3:].mean()), 2)
     }
 
+
     #extact dt,pm25,pm10
     datet=dt
 
@@ -70,20 +71,20 @@ def extract_from_redis():
 
     PM25_BP = [
     (0, 30, 0, 50),
-    (31, 60, 51, 100),
-    (61, 90, 101, 200),
-    (91, 120, 201, 300),
-    (121, 250, 301, 400),
-    (251, 500, 401, 500)
+    (30.01, 60, 51, 100),
+    (60.01, 90, 101, 200),
+    (90.01, 120, 201, 300),
+    (120.01, 250, 301, 400),
+    (250.01, 500, 401, 500)
     ]
 
     PM10_BP = [
     (0, 50, 0, 50),
-    (51, 100, 51, 100),
-    (101, 250, 101, 200),
-    (251, 350, 201, 300),
-    (351, 430, 301, 400),
-    (431, 600, 401, 500)
+    (50.01, 100, 51, 100),
+    (100.01, 250, 101, 200),
+    (250.01, 350, 201, 300),
+    (350.01, 430, 301, 400),
+    (430.01, 600, 401, 500)
     ]
 
     fetch_d=r.lrange("air_quality_history", -1, -1)
@@ -109,9 +110,16 @@ def extract_from_redis():
     if pm2_5 is None or pm10 is None:
         return None
     
+    print(pm2_5)
+    print(pm10)
+
     #calculate AQI
     PM25=calculate_sub_i(pm2_5, PM25_BP)
     PM10=calculate_sub_i(pm10, PM10_BP)
+    
+    print(PM25)
+    print(PM10)
+
     aqi=max(PM25, PM10)
 
     data={
