@@ -109,16 +109,10 @@ def extract_from_redis():
     
     if pm2_5 is None or pm10 is None:
         return None
-    
-    print(pm2_5)
-    print(pm10)
 
     #calculate AQI
     PM25=calculate_sub_i(pm2_5, PM25_BP)
     PM10=calculate_sub_i(pm10, PM10_BP)
-    
-    print(PM25)
-    print(PM10)
 
     aqi=max(PM25, PM10)
 
