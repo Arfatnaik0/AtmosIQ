@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 import pytz
 import os
 
-from dotenv import load_dotenv
-load_dotenv()
+#from dotenv import load_dotenv
+#load_dotenv()
 
 IST = pytz.timezone("Asia/Kolkata")
 
