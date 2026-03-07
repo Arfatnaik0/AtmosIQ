@@ -78,8 +78,8 @@ Interactive Dashboard
 | `GET /api/trend` | AQI slope over last 3 readings — returns `up` / `down` / `stable` with ±10 threshold | 5 min |
 | `GET /api/health-advisory` | Maps current AQI to India AQI category, colour and health message | 5 min |
 | `GET /api/model-scorecard` | MAE between `current_aqi` and `predicted_aqi_3h` across all history | 5 min |
-| `GET /api/daily-summary` | Min, avg and max AQI grouped by date | 5 min |
-| `GET /api/worst-hours` | Average AQI by hour-of-day across all history | 5 min |
+| `GET /api/daily-summary` | Min, avg and max AQI grouped by date based on past week | 5 min |
+| `GET /api/worst-hours` | Average AQI by hour-of-day of past 30 days | 5 min |
 | `GET /api/data-freshness` | Age of most recent record in minutes; flags `is_stale` if older than 90 min | 1 min |
 
 ## Machine Learning Model
