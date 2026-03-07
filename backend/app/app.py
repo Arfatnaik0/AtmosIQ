@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 import pytz
 import os
 
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 cache = Cache(config={
-    "CACHE_TYPE": "RedisCache" if os.getenv("REDIS_URL") else "SimpleCache",
+    "CACHE_TYPE": "RedisCache",
     "CACHE_REDIS_URL": os.getenv("REDIS_URL"),
     "CACHE_DEFAULT_TIMEOUT": 300
 })
@@ -120,9 +120,11 @@ def model_scorecard():
 @cache.cached(timeout=300)
 def daily_summary():
     supabase = get_supabase()
+    since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
     res = (
         supabase.table("aqi_history")
         .select("timestamp_utc,current_aqi")
+        .gte("timestamp_utc", since)
         .order("timestamp_utc")
         .execute()
     )
@@ -150,9 +152,11 @@ def daily_summary():
 @cache.cached(timeout=300)
 def worst_hours():
     supabase = get_supabase()
+    since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
     res = (
         supabase.table("aqi_history_all_features")
         .select("hour_of_day,current_aqi")
+        .gte("timestamp_utc", since)
         .execute()
     )
     if not res.data:
