@@ -15,7 +15,7 @@ app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 cache = Cache(config={
-    "CACHE_TYPE": "RedisCache",
+    "CACHE_TYPE": "RedisCache" if os.getenv("REDIS_URL") else "SimpleCache",
     "CACHE_REDIS_URL": os.getenv("REDIS_URL"),
     "CACHE_DEFAULT_TIMEOUT": 300
 })
