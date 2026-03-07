@@ -30,15 +30,18 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
 ## Key Features
 
 - Hourly automated data ingestion using GitHub Actions
-- Rolling short-term memory using Redis (last 3 hours)
+- Rolling short-term memory using Redis (last 3 hours of sensor data)
 - ML-based AQI prediction (3 hours ahead)
 - Persistent historical storage in Supabase
+- Redis-backed response caching shared across all Gunicorn workers
 - Real-time dashboard with:
   - PM2.5 & PM10 trends
-  - Current AQI with category
-  - Past 24h AQI history
-  - 3h AQI forecast
-- Clean glass-morphism UI built with Flask + Chart.js
+  - Current AQI with category and health advisory
+  - Past 24h AQI history + 3h forecast chart
+  - Weather conditions (temperature, humidity, wind)
+  - Model MAE scorecard
+  - Daily AQI summary and worst-hours-of-day analysis
+- Dark industrial UI built with Flask + Chart.js
 - Zero manual intervention once deployed
 
 ## System Architecture
@@ -56,17 +59,30 @@ Feature Engineering + ML Prediction
         ↓
 Supabase (Persistent Database)
         ↓
-Flask API (Railway)
+Flask API (Railway — Docker)
         ↓
 Interactive Dashboard
 ```
 
-### Important
+### Data Flow Notes
 
-- Redis is used only inside GitHub Actions
-- Flask never connects to Redis
-- Flask only reads from Supabase
-- All writes happen via GitHub Actions
+- Redis serves two purposes: a rolling 3-hour buffer inside GitHub Actions, and a shared response cache for Flask (via Flask-Caching)
+- All writes to Supabase happen via GitHub Actions
+- Flask reads from Supabase and caches responses in Redis — it never writes sensor data
+
+## API Endpoints
+
+| Endpoint | Description | Cache TTL |
+|---|---|---|
+| `GET /api/history` | PM2.5, PM10, actual and predicted AQI for the last 24h | 5 min |
+| `GET /api/current` | Most recent single row from `aqi_history` | 5 min |
+| `GET /api/weather` | Latest temperature, humidity, wind speed and direction | 5 min |
+| `GET /api/trend` | AQI slope over last 3 readings — returns `up` / `down` / `stable` with ±10 threshold | 5 min |
+| `GET /api/health-advisory` | Maps current AQI to India AQI category, colour and health message | 5 min |
+| `GET /api/model-scorecard` | MAE between `current_aqi` and `predicted_aqi_3h` across all history | 5 min |
+| `GET /api/daily-summary` | Min, avg and max AQI grouped by date | 5 min |
+| `GET /api/worst-hours` | Average AQI by hour-of-day across all history | 5 min |
+| `GET /api/data-freshness` | Age of most recent record in minutes; flags `is_stale` if older than 90 min | 1 min |
 
 ## Machine Learning Model
 
@@ -90,6 +106,8 @@ AtmosIQ/
 ├── backend/
 │   ├── app/
 │   │   ├── app.py              # Flask app (API + dashboard)
+│   │   ├── dockerfile          # Docker image — app/ is the build root
+│   │   ├── requirements.txt
 │   │   ├── templates/
 │   │   │   └── dashboard.html
 │   │   └── static/
@@ -101,7 +119,7 @@ AtmosIQ/
 │   │   └── aqi_service.py      # Redis → features → prediction
 │   │
 │   └── model/
-│       └── xgb_aqi_model.pkl   # Trained ML model
+│       └── xgb_aqi_model_3hr.pkl   # Trained ML model
 │
 ├── dataset/
 │   ├── mum-byculla-bmc-2024-25.csv
@@ -117,6 +135,8 @@ AtmosIQ/
 └── README.md
 ```
 
+> **Deployment note:** Railway is configured with `backend/app` as the root directory, so the `dockerfile` at that path is picked up directly as the build context.
+
 ## Automation Pipeline (GitHub Actions)
 
 - Runs every hour
@@ -127,28 +147,41 @@ AtmosIQ/
 
 ## Tech Stack
 
-| Layer       | Technology              |
-|-------------|-------------------------|
-| Data Source | OpenWeather API         |
-| Scheduler   | GitHub Actions (Cron)   |
-| Cache       | Redis (Upstash)         |
-| ML          | XGBoost                 |
-| Database    | Supabase (PostgreSQL)   |
-| Backend     | Flask                   |
-| Frontend    | HTML, CSS, JavaScript   |
-| Charts      | Chart.js                |
-| Hosting     | Railway                 |
+| Layer | Technology |
+|---|---|
+| Data Source | OpenWeather API |
+| Scheduler | GitHub Actions (Cron) |
+| Cache (buffer) | Redis — Upstash (GitHub Actions rolling window) |
+| Cache (API) | Redis — Railway instance via Flask-Caching |
+| ML | XGBoost |
+| Database | Supabase (PostgreSQL) |
+| Backend | Flask + Gunicorn |
+| Frontend | HTML, CSS, JavaScript |
+| Charts | Chart.js |
+| Hosting | Railway (Docker) |
 
 ## Dashboard Highlights
 
-- PM2.5 & PM10 history charts
-- Current AQI card
-  - Category (Good / Moderate / Poor / Very Poor)
-  - Predicted AQI for the same hour (from 3h ago)
-  - Difference indicator
-- Combined AQI chart
-  - Past 24 hours actual AQI
-  - Next 3 hours forecast (dashed line)
+### Stat Cards
+- **Current AQI** — live value with India AQI category badge, model-predicted value from 3h ago, and Δ difference
+- **AQI Trend** — directional arrow (↑ ↓ →) and slope value computed from the last 3 readings
+- **Temperature / Humidity** — latest weather conditions
+- **Wind** — speed (m/s) and direction (degrees)
+- **Model MAE** — mean absolute error across all stored history with sample count
+- **Data Freshness** — age of the most recent record in minutes; card turns red if stale (> 90 min)
+
+### Health Advisory Banner
+Colour-coded strip above the dashboard mapping current AQI to its India AQI category (Good → Severe) with a human-readable health message.
+
+### Charts
+- **AQI — Past 24h + 3h Forecast** — continuous line chart; actual AQI in red, dashed green forecast extension for the next 3 hours
+- **PM2.5 History** — 24h trend in cyan
+- **PM10 History** — 24h trend in purple
+- **Daily AQI Summary** — grouped bar chart showing min / avg / max per calendar day
+- **Worst Hours of Day** — bar chart of average AQI by hour, bars dynamically coloured by AQI severity level
+
+### Performance
+All 8 API calls are fired in parallel via `Promise.allSettled` on page load — single round trip. Each endpoint degrades gracefully; a failed fetch renders `--` rather than crashing the page. Charts auto-refresh every 15 minutes without re-showing the loading overlay.
 
 ## Future Improvements
 
