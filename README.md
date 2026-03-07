@@ -18,7 +18,7 @@ AtmosIQ calculates AQI using PM2.5 and PM10 only, reflecting real-world monitori
 
 As shown above, public air-quality display boards in Mumbai primarily report PM2.5 and PM10, which usually dominate AQI values in urban Indian environments.
 
-Reasoning
+**Reasoning**
 - PM2.5 & PM10 have the highest health impact
 - They show the strongest correlation with AQI
 - They are the most consistently available pollutants
@@ -34,10 +34,10 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
 - ML-based AQI prediction (3 hours ahead)
 - Persistent historical storage in Supabase
 - Real-time dashboard with:
-- PM2.5 & PM10 trends
-- Current AQI with category
-- Past 24h AQI history
-- 3h AQI forecast
+  - PM2.5 & PM10 trends
+  - Current AQI with category
+  - Past 24h AQI history
+  - 3h AQI forecast
 - Clean glass-morphism UI built with Flask + Chart.js
 - Zero manual intervention once deployed
 
@@ -45,6 +45,7 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
 
 ![alt text](workflow.png)
 
+```
 OpenWeather API
         ↓
 GitHub Actions (Cron Job, Hourly)
@@ -58,6 +59,7 @@ Supabase (Persistent Database)
 Flask API (Railway)
         ↓
 Interactive Dashboard
+```
 
 ### Important
 
@@ -68,23 +70,16 @@ Interactive Dashboard
 
 ## Machine Learning Model
 
-- Model: RandomForestRegressor
+- **Model:** XGBoost Regressor
+- **Prediction Horizon:** 3 hours ahead
+- **Target:** PM-based AQI
+- **Features:**
+  - PM2.5, PM10
+  - Temperature, humidity, wind speed/direction
+  - Lag features (1h, 2h)
+  - Rolling mean (3h)
+  - Time features (hour, month)
 
-- Prediction Horizon: 3 hours ahead
-
-- Target: PM-based AQI
-
-- Features:
-PM2.5, PM10
-Temperature, humidity, wind speed/direction
-Lag features (1h, 2h)
-Rolling mean (3h)
-Time features (hour, month)
-
-- Evaluation:
-R² ≈ 0.85
-MAE ≈ 13
-RMSE ≈ 21
 The trained model is saved and reused in production.
 
 ## Project Structure
@@ -106,20 +101,20 @@ AtmosIQ/
 │   │   └── aqi_service.py      # Redis → features → prediction
 │   │
 │   └── model/
-│       └── rf_aqi_model.pkl    # Trained ML model
+│       └── xgb_aqi_model.pkl   # Trained ML model
 │
 ├── dataset/
-│   └── mum-byculla-bmc-2024-25.csv
-|
+│   ├── mum-byculla-bmc-2024-25.csv
+│   └── Latest_aqi_data.csv
+│
 ├── notebook/
-│   └── notebook.ipynb #notebook
+│   └── notebook.ipynb          # Training notebook
 │
 ├── .github/workflows/
 │   └── air_quality_cron.yml    # Hourly GitHub Actions workflow
 │
 ├── requirements.txt
 └── README.md
-
 ```
 
 ## Automation Pipeline (GitHub Actions)
@@ -132,30 +127,28 @@ AtmosIQ/
 
 ## Tech Stack
 
-Layer	      Technology
-
-Data Source	  OpenWeather API
-Scheduler	  GitHub Actions (Cron)
-Cache	      Redis (Upstash)
-ML	          scikit-learn
-Database	  Supabase (PostgreSQL)
-Backend	      Flask
-Frontend	  HTML, CSS, JavaScript
-Charts	      Chart.js
-Hosting	      Railway
+| Layer       | Technology              |
+|-------------|-------------------------|
+| Data Source | OpenWeather API         |
+| Scheduler   | GitHub Actions (Cron)   |
+| Cache       | Redis (Upstash)         |
+| ML          | XGBoost                 |
+| Database    | Supabase (PostgreSQL)   |
+| Backend     | Flask                   |
+| Frontend    | HTML, CSS, JavaScript   |
+| Charts      | Chart.js                |
+| Hosting     | Railway                 |
 
 ## Dashboard Highlights
 
 - PM2.5 & PM10 history charts
-
 - Current AQI card
-     Category (Good / Moderate / Poor / Very Poor)
-     Predicted AQI for the same hour (from 3h ago)
-     Difference indicator
-
+  - Category (Good / Moderate / Poor / Very Poor)
+  - Predicted AQI for the same hour (from 3h ago)
+  - Difference indicator
 - Combined AQI chart
-     Past 24 hours actual AQI
-     Next 3 hours forecast (dashed line)
+  - Past 24 hours actual AQI
+  - Next 3 hours forecast (dashed line)
 
 ## Future Improvements
 

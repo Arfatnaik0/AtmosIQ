@@ -18,7 +18,7 @@ r=redis.Redis.from_url(REDIS_URL, decode_responses=True)
 
 # load model
 base_dir=os.path.dirname(os.path.abspath(__file__))
-model_path=os.path.join(base_dir, '..', 'model', 'rf_aqi_model.pkl')
+model_path=os.path.join(base_dir, '..', 'model', 'xgb_aqi_model_3hr.pkl')
 model=joblib.load(model_path)
 
 #function to extract data from redis and make prediction
