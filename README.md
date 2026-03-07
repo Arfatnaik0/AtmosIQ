@@ -8,8 +8,6 @@ The system is fully automated, scalable, and production-ready, combining GitHub 
 
 Dashboard: https://atmosiq.up.railway.app/
 
-![alt text](AtmosIQ.png)
-
 ## Why PM-Based AQI
 
 ![alt text](AQI_board.jpeg)
