@@ -43,22 +43,22 @@ def extract_from_redis():
 
 
     #prepare data for prediction
-    data={
-        'WS (m/s)':float(df['windS'].iloc[-1]),
-        'WD (deg)':float(df['windD'].iloc[-1]),
-        'month':month,
-        'hourofday':hour,
-        'PM2_5':float(df['pm2_5'].iloc[-1]),
-        'PM10':float(df['pm10'].iloc[-1]),
-        'temp':float(df['temp'].iloc[-1]),
-        'humidity':float(df['humidity'].iloc[-1]),
-        'PM2_5(lag1)':float(df['pm2_5'].iloc[-2]),
-        'PM2_5(lag2)':float(df['pm2_5'].iloc[-3]),
-        'PM10(lag1)':float(df['pm10'].iloc[-2]),
-        'PM10(lag2)':float(df['pm10'].iloc[-3]),
-        'PM2_5(rolling_mean_3)':round(float(df['pm2_5'].iloc[-3:].mean()), 2),
-        'PM10(rolling_mean_3)':round(float(df['pm10'].iloc[-3:].mean()), 2)
-    }
+    data = {
+    'WS (m/s)':  float(df['windS'].iloc[-1]),
+    'WD (deg)':  float(df['windD'].iloc[-1]),
+    'month':     month,
+    'hourofday': hour,
+    'temp':      float(df['temp'].iloc[-1]),
+    'humidity':  float(df['humidity'].iloc[-1]),
+    'PM2_5':     float(df['pm2_5'].iloc[-1]),
+    'PM10':      float(df['pm10'].iloc[-1]),
+    'PM2_5(lag1)': float(df['pm2_5'].iloc[-2]),
+    'PM2_5(lag2)': float(df['pm2_5'].iloc[-3]),
+    'PM10(lag1)':  float(df['pm10'].iloc[-2]),
+    'PM10(lag2)':  float(df['pm10'].iloc[-3]),
+    'PM2_5(rolling_mean_3)': round(float(df['pm2_5'].iloc[-3:].mean()), 2),
+    'PM10(rolling_mean_3)':  round(float(df['pm10'].iloc[-3:].mean()), 2)
+}
 
 
     #extact dt,pm25,pm10
