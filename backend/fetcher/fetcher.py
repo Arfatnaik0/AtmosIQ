@@ -30,7 +30,7 @@ if not OPENWEATHER_API_KEY or not REDIS_URL:
     raise RuntimeError("Missing required environment variables")
 
 REDIS_KEY = "air_quality_history"
-MAX_HOURS = 24
+MAX_HOURS = 72
 
 # connect to redis
 r = redis.Redis.from_url(REDIS_URL, decode_responses=True)
@@ -72,7 +72,7 @@ def fetch_and_store():
     # push new reading
     r.rpush(REDIS_KEY, json.dumps(record))
 
-    # keep only last 24 readings
+    # keep only last 72 readings
     r.ltrim(REDIS_KEY, -MAX_HOURS, -1)
 
 def store_for_updating_model(timestamp_utc, ws_ms, wd_deg, month, hour_of_day, temperature, humidity, pm25, pm10, pm25_lag1, pm25_lag2, pm10_lag1, pm10_lag2, pm25_rm3, pm10_rm3, current_aqi, predicted_aqi):
