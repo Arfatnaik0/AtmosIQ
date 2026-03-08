@@ -2,11 +2,13 @@
 
 AtmosIQ is an end-to-end air quality monitoring and forecasting system that collects real-time pollution data, predicts future PM-based AQI using a machine learning model, and visualizes insights through a modern web dashboard.
 
-The system is fully automated, scalable, and production-ready, combining GitHub Actions, Redis, Supabase, Flask, and ML forecasting.
+The system is fully automated, scalable, and production-ready, combining GitHub Actions, Redis, Supabase, Flask, MLflow experiment tracking, and ML forecasting.
 
 ## 🚀 Live Demo
 
 Dashboard: https://atmosiq.up.railway.app/
+
+![alt text](AtmosIQ.png)
 
 ## Why PM-Based AQI
 
@@ -30,6 +32,7 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
 - Hourly automated data ingestion using GitHub Actions
 - Rolling short-term memory using Redis (last 3 hours of sensor data)
 - ML-based AQI prediction (3 hours ahead)
+- MLflow experiment tracking — all training runs logged with MAE, RMSE and R² metrics for full model lineage
 - Persistent historical storage in Supabase
 - Redis-backed response caching shared across all Gunicorn workers
 - Real-time dashboard with:
@@ -78,8 +81,8 @@ Interactive Dashboard
 | `GET /api/trend` | AQI slope over last 3 readings — returns `up` / `down` / `stable` with ±10 threshold | 5 min |
 | `GET /api/health-advisory` | Maps current AQI to India AQI category, colour and health message | 5 min |
 | `GET /api/model-scorecard` | MAE between `current_aqi` and `predicted_aqi_3h` across all history | 5 min |
-| `GET /api/daily-summary` | Min, avg and max AQI grouped by date based on past week | 5 min |
-| `GET /api/worst-hours` | Average AQI by hour-of-day of past 30 days | 5 min |
+| `GET /api/daily-summary` | Min, avg and max AQI grouped by date | 5 min |
+| `GET /api/worst-hours` | Average AQI by hour-of-day across all history | 5 min |
 | `GET /api/data-freshness` | Age of most recent record in minutes; flags `is_stale` if older than 90 min | 1 min |
 
 ## Machine Learning Model
@@ -95,6 +98,24 @@ Interactive Dashboard
   - Time features (hour, month)
 
 The trained model is saved and reused in production.
+
+### Experiment Tracking — MLflow
+
+![alt text](mlflow.png)
+
+All training runs are tracked using MLflow under the `AQI_Prediction` experiment. 22 runs were logged across XGBoost and Random Forest variants, with the best XGBoost configuration selected for production.
+
+**Logged metrics per run:** MAE · RMSE · R² Score
+
+**Best model performance (XGB_updated_feats):**
+
+| Metric | Value |
+|---|---|
+| MAE | 13.37 |
+| RMSE | 22.55 |
+| R² Score | 0.85 |
+
+The selected model (`xgb_aqi_model_3hr.pkl`) is the artifact from this winning run.
 
 ## Project Structure
 
@@ -152,6 +173,7 @@ AtmosIQ/
 | Cache (buffer) | Redis — Upstash (GitHub Actions rolling window) |
 | Cache (API) | Redis — Railway instance via Flask-Caching |
 | ML | XGBoost |
+| Experiment Tracking | MLflow |
 | Database | Supabase (PostgreSQL) |
 | Backend | Flask + Gunicorn |
 | Frontend | HTML, CSS, JavaScript |
