@@ -1,7 +1,6 @@
 from flask import Flask, jsonify, render_template
 from flask_caching import Cache
 from supabase import create_client
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 import pytz
 import os
@@ -21,13 +20,7 @@ cache = Cache(config={
 })
 cache.init_app(app)
 
-
-def get_supabase():
-    url = os.getenv("SUPABASE_URL")
-    key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    if not url or not key:
-        raise RuntimeError("Supabase environment variables not set")
-    return create_client(url, key)
+supabase=create_client(os.getenv("SUPABASE_URL"),os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 
 HEALTH_ADVISORY = [
@@ -54,7 +47,6 @@ def dashboard():
 @app.route("/api/current")
 @cache.cached(timeout=300)
 def current():
-    supabase = get_supabase()
     res = (
         supabase.table("aqi_history")
         .select("*")
@@ -70,7 +62,6 @@ def current():
 @app.route("/api/history")
 @cache.cached(timeout=300)
 def history():
-    supabase = get_supabase()
     since = (datetime.now(timezone.utc) - timedelta(hours=24)).isoformat()
     res = (
         supabase.table("aqi_history")
@@ -85,7 +76,6 @@ def history():
 @app.route("/api/weather")
 @cache.cached(timeout=300)
 def weather():
-    supabase = get_supabase()
     res = (
         supabase.table("aqi_history_all_features")
         .select("timestamp_utc,temperature,humidity,ws_ms,wd_deg")
@@ -101,7 +91,6 @@ def weather():
 @app.route("/api/model-scorecard")
 @cache.cached(timeout=300)
 def model_scorecard():
-    supabase = get_supabase()
     res = supabase.rpc("get_model_scorecard").execute()
     if not res.data:
         return jsonify({"error": "No data"}), 404
@@ -112,7 +101,6 @@ def model_scorecard():
 @app.route("/api/daily-summary")
 @cache.cached(timeout=300)
 def daily_summary():
-    supabase = get_supabase()
     res = supabase.rpc("get_daily_summary").execute()
     return jsonify(res.data or [])
 
@@ -120,7 +108,6 @@ def daily_summary():
 @app.route("/api/worst-hours")
 @cache.cached(timeout=300)
 def worst_hours():
-    supabase = get_supabase()
     res = supabase.rpc("get_worst_hours").execute()
     return jsonify(res.data or [])
 
@@ -128,7 +115,6 @@ def worst_hours():
 @app.route("/api/data-freshness")
 @cache.cached(timeout=60)
 def data_freshness():
-    supabase = get_supabase()
     res = (
         supabase.table("aqi_history")
         .select("timestamp_utc")
@@ -156,7 +142,6 @@ def data_freshness():
 @app.route("/api/trend")
 @cache.cached(timeout=300)
 def trend():
-    supabase = get_supabase()
     res = (
         supabase.table("aqi_history")
         .select("timestamp_utc,current_aqi")
@@ -176,7 +161,6 @@ def trend():
 @app.route("/api/health-advisory")
 @cache.cached(timeout=300)
 def health_advisory():
-    supabase = get_supabase()
     res = (
         supabase.table("aqi_history")
         .select("current_aqi")
