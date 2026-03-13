@@ -1,13 +1,13 @@
 "use strict";
 
-// ── Chart instances (kept so we can destroy before re-render) ──
+// ── Chart instances ──
 let charts = {};
 
 // ── Chart.js global defaults ──
-Chart.defaults.color           = "#4a5568";
-Chart.defaults.borderColor     = "rgba(255,255,255,0.06)";
-Chart.defaults.font.family     = "'IBM Plex Mono', monospace";
-Chart.defaults.font.size       = 11;
+Chart.defaults.color          = "#55524c";
+Chart.defaults.borderColor    = "rgba(255,255,255,0.045)";
+Chart.defaults.font.family    = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size      = 11;
 Chart.defaults.plugins.legend.display = false;
 
 const CHART_OPTS = {
@@ -16,22 +16,22 @@ const CHART_OPTS = {
   interaction: { mode: "nearest", intersect: false },
   plugins: {
     tooltip: {
-      backgroundColor: "#0f1520",
-      borderColor: "rgba(0,212,255,0.25)",
+      backgroundColor: "#141512",
+      borderColor: "rgba(78,122,95,0.28)",
       borderWidth: 1,
-      titleColor: "#e2e8f0",
-      bodyColor: "#94a3b8",
-      padding: 10,
+      titleColor: "#e8e4da",
+      bodyColor: "#7a776f",
+      padding: 12,
       cornerRadius: 8,
     }
   },
   scales: {
     x: {
-      grid: { color: "rgba(255,255,255,0.04)" },
+      grid: { color: "rgba(255,255,255,0.03)" },
       ticks: { maxTicksLimit: 8 }
     },
     y: {
-      grid: { color: "rgba(255,255,255,0.04)" },
+      grid: { color: "rgba(255,255,255,0.03)" },
       ticks: { maxTicksLimit: 5 }
     }
   }
@@ -39,12 +39,12 @@ const CHART_OPTS = {
 
 // ── AQI colour scale (India AQI) ──
 function aqiColor(aqi) {
-  if (aqi <= 50)  return "#10b981";
-  if (aqi <= 100) return "#84cc16";
-  if (aqi <= 200) return "#f59e0b";
-  if (aqi <= 300) return "#f97316";
-  if (aqi <= 400) return "#ef4444";
-  return "#a78bfa";
+  if (aqi <= 50)  return "#4e7a5f";
+  if (aqi <= 100) return "#84a84d";
+  if (aqi <= 200) return "#c8922a";
+  if (aqi <= 300) return "#c85f30";
+  if (aqi <= 400) return "#c43838";
+  return "#7b68b8";
 }
 
 function aqiCategory(aqi) {
@@ -64,9 +64,19 @@ function destroyChart(key) {
 }
 
 function makeTimeLabel(ts) {
-  // "2024-05-01T13:45:00" → "13:45"
   return ts.slice(11, 16);
 }
+
+// ── Live clock (IST) ──
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, "0");
+  const m = String(now.getMinutes()).padStart(2, "0");
+  const clockEl = el("navClock");
+  if (clockEl) clockEl.textContent = `${h}:${m}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
 
 // ── Parallel fetch of all endpoints ──
 async function fetchAll() {
@@ -97,13 +107,14 @@ async function fetchAll() {
   };
 }
 
+
 // ── Render functions ──
 
 function renderAqiCard(history) {
   if (!history || history.length < 4) return;
 
   const latest    = history[history.length - 1];
-  const predicted = history[history.length - 4]; // predicted 3h ago for now
+  const predicted = history[history.length - 4];
 
   const aqi   = latest.current_aqi;
   const pred  = predicted?.predicted_aqi_3h ?? null;
@@ -122,7 +133,7 @@ function renderAqiCard(history) {
 
   if (delta !== null) {
     el("aqiDelta").textContent = delta > 0 ? `+${delta}` : `${delta}`;
-    el("aqiDelta").style.color = Math.abs(delta) <= 15 ? "#10b981" : "#ef4444";
+    el("aqiDelta").style.color = Math.abs(delta) <= 15 ? "#4e7a5f" : "#c43838";
   }
 }
 
@@ -130,10 +141,10 @@ function renderTrend(data) {
   if (!data || data.trend === "unknown") return;
 
   const icons  = { up: "↑", down: "↓", stable: "→" };
-  const colors = { up: "#ef4444", down: "#10b981", stable: "#f59e0b" };
+  const colors = { up: "#c43838", down: "#4e7a5f", stable: "#c8922a" };
 
   el("trendIcon").textContent  = icons[data.trend] || "—";
-  el("trendIcon").style.color  = colors[data.trend] || "#64748b";
+  el("trendIcon").style.color  = colors[data.trend] || "#55524c";
   el("trendLabel").textContent = data.trend;
   el("trendSlope").textContent = `slope: ${data.slope > 0 ? "+" : ""}${data.slope}`;
 }
@@ -155,15 +166,14 @@ function renderScorecard(data) {
 function renderFreshness(data) {
   if (!data || data.error) return;
 
-  // The stored timestamp is IST (UTC+5:30) saved as a naive string.
-  // Parse it, subtract 5h30m to get real UTC, then diff against now.
+  // Stored timestamp is naive IST — subtract 5h30m offset to get UTC
   const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-  const storedMs = new Date(data.latest_timestamp.replace(" ", "T")).getTime();
+  const storedMs    = new Date(data.latest_timestamp.replace(" ", "T")).getTime();
   const storedUtcMs = storedMs - IST_OFFSET_MS;
-  const mins = Math.round((Date.now() - storedUtcMs) / 60000);
+  const mins        = Math.round((Date.now() - storedUtcMs) / 60000);
 
   const isStale = mins > 90;
-  el("freshnessVal").textContent = mins;
+  el("freshnessVal").textContent    = mins;
   el("freshnessStatus").textContent = isStale ? "⚠ stale" : "✓ live";
   el("freshnessCard").classList.toggle("stale", isStale);
 }
@@ -172,16 +182,17 @@ function renderAdvisory(data) {
   if (!data || data.error) return;
   const banner = el("advisoryBanner");
   banner.classList.remove("hidden");
-  banner.style.background = `${data.color}18`;
-  banner.style.borderColor = `${data.color}40`;
+  banner.style.background   = `${data.color}12`;
+  banner.style.borderColor  = `${data.color}38`;
 
   const cat = el("advisoryCategory");
-  cat.textContent = data.category;
-  cat.style.background = `${data.color}30`;
-  cat.style.color = data.color;
+  cat.textContent       = data.category;
+  cat.style.background  = `${data.color}28`;
+  cat.style.color       = data.color;
 
   el("advisoryMessage").textContent = data.message;
 }
+
 
 // ── Chart renders ──
 
@@ -207,70 +218,77 @@ function renderAqiChart(history) {
         {
           label: "Actual AQI",
           data: [...actual, null, null, null],
-          borderColor: "#ef4444",
-          backgroundColor: "rgba(239,68,68,0.08)",
+          borderColor: "#c43838",
+          backgroundColor: "rgba(196,56,56,0.06)",
           fill: true,
           tension: 0.4,
           pointRadius: 0,
           pointHoverRadius: 5,
-          borderWidth: 2,
+          borderWidth: 1.5,
         },
         {
           label: "Forecast",
           data: forecast,
-          borderColor: "#10b981",
+          borderColor: "#6aab82",
           borderDash: [6, 4],
+          backgroundColor: "rgba(106,171,130,0.04)",
+          fill: true,
           tension: 0.4,
           pointRadius: 0,
           pointHoverRadius: 5,
-          borderWidth: 2,
+          borderWidth: 1.5,
         }
       ]
     },
-    options: { ...CHART_OPTS, plugins: { ...CHART_OPTS.plugins, legend: { display: false } } }
+    options: {
+      ...CHART_OPTS,
+      plugins: { ...CHART_OPTS.plugins, legend: { display: false } }
+    }
   });
 }
 
+// PM2.5 — thin bar chart (like reference design)
 function renderPm25Chart(history) {
   if (!history) return;
   destroyChart("pm25");
 
   const ctx = el("pm25Chart").getContext("2d");
   charts.pm25 = new Chart(ctx, {
-    type: "line",
+    type: "bar",
     data: {
       labels: history.map(d => makeTimeLabel(d.timestamp_utc)),
       datasets: [{
+        label: "PM2.5",
         data: history.map(d => d.pm2_5),
-        borderColor: "#00d4ff",
-        backgroundColor: "rgba(0,212,255,0.07)",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        borderWidth: 1.5,
+        backgroundColor: "rgba(0,200,224,0.5)",
+        hoverBackgroundColor: "rgba(0,200,224,0.75)",
+        borderRadius: 2,
+        barPercentage: 0.45,
+        categoryPercentage: 0.65,
       }]
     },
     options: CHART_OPTS
   });
 }
 
+// PM10 — thin bar chart (like reference design)
 function renderPm10Chart(history) {
   if (!history) return;
   destroyChart("pm10");
 
   const ctx = el("pm10Chart").getContext("2d");
   charts.pm10 = new Chart(ctx, {
-    type: "line",
+    type: "bar",
     data: {
       labels: history.map(d => makeTimeLabel(d.timestamp_utc)),
       datasets: [{
+        label: "PM10",
         data: history.map(d => d.pm10),
-        borderColor: "#a78bfa",
-        backgroundColor: "rgba(167,139,250,0.07)",
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        borderWidth: 1.5,
+        backgroundColor: "rgba(123,104,184,0.5)",
+        hoverBackgroundColor: "rgba(123,104,184,0.75)",
+        borderRadius: 2,
+        barPercentage: 0.45,
+        categoryPercentage: 0.65,
       }]
     },
     options: CHART_OPTS
@@ -281,10 +299,10 @@ function renderDailyChart(daily) {
   if (!daily || daily.length === 0) return;
   destroyChart("daily");
 
-  const labels  = daily.map(d => d.date.slice(5)); // "MM-DD"
-  const avgAqi  = daily.map(d => d.avg_aqi);
-  const minAqi  = daily.map(d => d.min_aqi);
-  const maxAqi  = daily.map(d => d.max_aqi);
+  const labels = daily.map(d => d.date.slice(5));
+  const avgAqi = daily.map(d => d.avg_aqi);
+  const minAqi = daily.map(d => d.min_aqi);
+  const maxAqi = daily.map(d => d.max_aqi);
 
   const ctx = el("dailyChart").getContext("2d");
   charts.daily = new Chart(ctx, {
@@ -295,22 +313,22 @@ function renderDailyChart(daily) {
         {
           label: "Max",
           data: maxAqi,
-          backgroundColor: "rgba(239,68,68,0.55)",
-          borderRadius: 4,
+          backgroundColor: "rgba(196,56,56,0.5)",
+          borderRadius: 3,
           order: 1,
         },
         {
           label: "Avg",
           data: avgAqi,
-          backgroundColor: "rgba(0,212,255,0.45)",
-          borderRadius: 4,
+          backgroundColor: "rgba(0,200,224,0.4)",
+          borderRadius: 3,
           order: 2,
         },
         {
           label: "Min",
           data: minAqi,
-          backgroundColor: "rgba(16,185,129,0.5)",
-          borderRadius: 4,
+          backgroundColor: "rgba(78,122,95,0.55)",
+          borderRadius: 3,
           order: 3,
         }
       ]
@@ -322,7 +340,12 @@ function renderDailyChart(daily) {
         legend: {
           display: true,
           position: "top",
-          labels: { boxWidth: 10, padding: 14, color: "#4a5568", font: { size: 10 } }
+          labels: {
+            boxWidth: 8,
+            padding: 16,
+            color: "#55524c",
+            font: { size: 10 }
+          }
         }
       }
     }
@@ -342,12 +365,16 @@ function renderWorstHoursChart(worst) {
         label: "Avg AQI",
         data: worst.map(d => d.avg_aqi),
         backgroundColor: worst.map(d => `${aqiColor(d.avg_aqi)}99`),
-        borderRadius: 4,
+        hoverBackgroundColor: worst.map(d => `${aqiColor(d.avg_aqi)}dd`),
+        borderRadius: 3,
+        barPercentage: 0.7,
+        categoryPercentage: 0.8,
       }]
     },
     options: CHART_OPTS
   });
 }
+
 
 // ── Boot ──
 async function renderDashboard(isFirstLoad = false) {
@@ -367,15 +394,14 @@ async function renderDashboard(isFirstLoad = false) {
   renderWorstHoursChart(data.worst);
 
   if (isFirstLoad) {
-    // Small delay so user sees the load finish cleanly
     setTimeout(() => {
       el("loadingOverlay").classList.add("hidden");
     }, 90);
   }
 }
 
-// ── Boot ──
+// Initial render
 renderDashboard(true);
 
-// Refresh every 15 minutes
+// Auto-refresh every 15 minutes
 setInterval(() => renderDashboard(false), 15 * 60 * 1000);

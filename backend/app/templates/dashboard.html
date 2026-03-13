@@ -25,16 +25,31 @@
 
   <!-- Navbar -->
   <nav class="navbar">
-    <div class="nav-brand">
-      <span class="nav-dot"></span>
-      AtmosIQ
+    <div class="nav-left">
+      <div class="nav-logo-mark">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="1.4"/>
+          <circle cx="10" cy="10" r="3.5" fill="currentColor" opacity="0.65"/>
+          <line x1="10" y1="1" x2="10" y2="4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="10" y1="15.5" x2="10" y2="19" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="1" y1="10" x2="4.5" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          <line x1="15.5" y1="10" x2="19" y2="10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="nav-brand">AtmosIQ</span>
+      <span class="nav-location">Byculla · Mumbai</span>
     </div>
+
     <div class="nav-right">
       <a href="https://github.com/Arfatnaik0/AtmosIQ" target="_blank" class="nav-link">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
         GitHub
       </a>
       <a href="https://personal-portfolio-arfat.vercel.app/" target="_blank" class="nav-link">Portfolio</a>
+      <div class="nav-divider"></div>
+      <div class="nav-live-dot"></div>
+      <span id="navClock" class="nav-clock">--:--</span>
+      <span class="nav-clock-label">IST</span>
     </div>
   </nav>
 
@@ -49,16 +64,17 @@
     <!-- ── Row 1: Stats strip ── -->
     <div class="stats-strip">
 
-      <!-- Current AQI -->
-      <div class="stat-card aqi-stat" id="aqiStatCard">
+      <!-- Current AQI — hero light card -->
+      <div class="stat-card aqi-stat light-card" id="aqiStatCard">
         <div class="stat-label">Current AQI</div>
         <div class="stat-value-row">
-          <span id="currentAQI" class="stat-number">--</span>
+          <span id="currentAQI" class="stat-number hero-number">--</span>
           <span id="aqiCategory" class="aqi-badge">--</span>
         </div>
         <div class="stat-sub-row">
-          <span class="stat-sub-label">Model Predicted</span>
+          <span class="stat-sub-label">Predicted</span>
           <span id="predictedNow" class="stat-sub-val">--</span>
+          <span class="stat-sub-sep">·</span>
           <span class="stat-sub-label">Δ</span>
           <span id="aqiDelta" class="stat-sub-val">--</span>
         </div>
@@ -86,7 +102,7 @@
 
       <!-- Wind -->
       <div class="stat-card">
-        <div class="stat-label">Wind</div>
+        <div class="stat-label">Wind Speed</div>
         <div class="stat-value-row">
           <span id="windSpeed" class="stat-number">--</span>
           <span class="stat-unit">m/s</span>
@@ -99,7 +115,7 @@
         <div class="stat-label">Model MAE</div>
         <div class="stat-value-row">
           <span id="maeVal" class="stat-number">--</span>
-          <span class="stat-unit">AQI pts</span>
+          <span class="stat-unit">pts</span>
         </div>
         <div class="stat-footnote" id="maeSamples">samples: --</div>
       </div>
@@ -111,41 +127,60 @@
           <span id="freshnessVal" class="stat-number">--</span>
           <span class="stat-unit">min ago</span>
         </div>
-        <div class="stat-footnote" id="freshnessStatus">checking…</div>
+        <div class="stat-footnote" id="freshnessStatus">checking&hellip;</div>
       </div>
 
     </div>
 
     <!-- ── Row 2: Main charts ── -->
-    <div class="charts-row">
+    <div class="charts-row main-charts-row">
+
       <div class="chart-card span-2">
         <div class="chart-header">
-          <h3>AQI — Past 24h + 3h Forecast</h3>
-          <span class="legend-pill red">Actual</span>
-          <span class="legend-pill green dashed">Forecast</span>
+          <h3>AQI &mdash; Past 24 h + 3 h Forecast</h3>
+          <div class="chart-legend">
+            <span class="legend-pill red">Actual</span>
+            <span class="legend-pill green dashed">Forecast</span>
+          </div>
+          <button class="card-menu">&#xB7;&#xB7;&#xB7;</button>
         </div>
         <div class="chart-wrap"><canvas id="aqiChart" height="240"></canvas></div>
       </div>
 
       <div class="chart-card">
-        <div class="chart-header"><h3>PM2.5 History</h3></div>
+        <div class="chart-header">
+          <h3>PM2.5 History</h3>
+          <button class="card-menu">&#xB7;&#xB7;&#xB7;</button>
+        </div>
         <div class="chart-wrap"><canvas id="pm25Chart" height="180"></canvas></div>
       </div>
 
       <div class="chart-card">
-        <div class="chart-header"><h3>PM10 History</h3></div>
+        <div class="chart-header">
+          <h3>PM10 History</h3>
+          <button class="card-menu">&#xB7;&#xB7;&#xB7;</button>
+        </div>
         <div class="chart-wrap"><canvas id="pm10Chart" height="180"></canvas></div>
       </div>
+
     </div>
 
     <!-- ── Row 3: Analysis charts ── -->
-    <div class="charts-row">
+    <div class="charts-row analysis-row">
       <div class="chart-card">
-        <div class="chart-header"><h3>Daily AQI Summary</h3><span class="chart-sub">min / avg / max per day</span></div>
+        <div class="chart-header">
+          <h3>Daily AQI Summary</h3>
+          <span class="chart-sub">min &middot; avg &middot; max per day</span>
+          <button class="card-menu">&#xB7;&#xB7;&#xB7;</button>
+        </div>
         <div class="chart-wrap"><canvas id="dailyChart" height="220"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-header"><h3>Worst Hours of Day</h3><span class="chart-sub">avg AQI by hour</span></div>
+        <div class="chart-header">
+          <h3>Worst Hours of Day</h3>
+          <span class="chart-sub">avg AQI by hour</span>
+          <button class="card-menu">&#xB7;&#xB7;&#xB7;</button>
+        </div>
         <div class="chart-wrap"><canvas id="worstHoursChart" height="220"></canvas></div>
       </div>
     </div>
@@ -154,8 +189,10 @@
 
   <footer class="footer">
     <span>Built by Arfat Naik</span>
-    <span class="footer-sep">·</span>
+    <span class="footer-sep">&middot;</span>
     <span>Mumbai Air Quality Monitor</span>
+    <span class="footer-sep">&middot;</span>
+    <span>Byculla BMC Station</span>
   </footer>
 
   <script src="{{ url_for('static', filename='main.js') }}"></script>
