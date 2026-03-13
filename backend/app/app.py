@@ -6,8 +6,8 @@ from datetime import datetime, timedelta, timezone
 import pytz
 import os
 
-#from dotenv import load_dotenv
-#load_dotenv()
+# from dotenv import load_dotenv
+# load_dotenv()
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -102,79 +102,27 @@ def weather():
 @cache.cached(timeout=300)
 def model_scorecard():
     supabase = get_supabase()
-    res = (
-        supabase.table("aqi_history_all_features")
-        .select("current_aqi,predicted_aqi_3h")
-        .execute()
-    )
+    res = supabase.rpc("get_model_scorecard").execute()
     if not res.data:
-        return jsonify({"error": "No data available for scoring"}), 404
-    valid = [r for r in res.data if r["current_aqi"] is not None and r["predicted_aqi_3h"] is not None]
-    if not valid:
-        return jsonify({"error": "No valid rows for MAE calculation"}), 404
-    mae = sum(abs(r["current_aqi"] - r["predicted_aqi_3h"]) for r in valid) / len(valid)
-    return jsonify({"mae": round(mae, 2), "sample_size": len(valid)})
+        return jsonify({"error": "No data"}), 404
+    row = res.data[0]
+    return jsonify({"mae": row["mae"], "sample_size": row["sample_size"]})
 
 
 @app.route("/api/daily-summary")
 @cache.cached(timeout=300)
 def daily_summary():
     supabase = get_supabase()
-    since = (datetime.now(timezone.utc) - timedelta(days=7)).isoformat()
-    res = (
-        supabase.table("aqi_history")
-        .select("timestamp_utc,current_aqi")
-        .gte("timestamp_utc", since)
-        .order("timestamp_utc")
-        .execute()
-    )
-    if not res.data:
-        return jsonify([])
-    daily = defaultdict(list)
-    for row in res.data:
-        if row["current_aqi"] is None:
-            continue
-        date = row["timestamp_utc"][:10]
-        daily[date].append(row["current_aqi"])
-    summary = [
-        {
-            "date": date,
-            "min_aqi": round(min(values)),
-            "max_aqi": round(max(values)),
-            "avg_aqi": round(sum(values) / len(values), 1),
-        }
-        for date, values in sorted(daily.items())
-    ]
-    return jsonify(summary)
+    res = supabase.rpc("get_daily_summary").execute()
+    return jsonify(res.data or [])
 
 
 @app.route("/api/worst-hours")
 @cache.cached(timeout=300)
 def worst_hours():
     supabase = get_supabase()
-    since = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
-    res = (
-        supabase.table("aqi_history_all_features")
-        .select("hour_of_day,current_aqi")
-        .gte("timestamp_utc", since)
-        .execute()
-    )
-    if not res.data:
-        return jsonify([])
-    hourly = defaultdict(list)
-    for row in res.data:
-        if row["current_aqi"] is None or row["hour_of_day"] is None:
-            continue
-        hourly[row["hour_of_day"]].append(row["current_aqi"])
-    result = [
-        {
-            "hour": hour,
-            "avg_aqi": round(sum(values) / len(values), 1),
-            "reading_count": len(values),
-        }
-        for hour, values in sorted(hourly.items())
-    ]
-    return jsonify(result)
+    res = supabase.rpc("get_worst_hours").execute()
+    return jsonify(res.data or [])
 
 
 @app.route("/api/data-freshness")
