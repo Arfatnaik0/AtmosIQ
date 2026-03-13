@@ -370,7 +370,7 @@ async function renderDashboard(isFirstLoad = false) {
     // Small delay so user sees the load finish cleanly
     setTimeout(() => {
       el("loadingOverlay").classList.add("hidden");
-    }, 300);
+    }, 90);
   }
 }
 
