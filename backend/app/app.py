@@ -1,16 +1,16 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, jsonify, render_template, send_from_directory
 from flask_caching import Cache
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
 import pytz
 import os
 
-# from dotenv import load_dotenv
-# load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 IST = pytz.timezone("Asia/Kolkata")
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static', static_url_path='/static')
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 cache = Cache(config={
@@ -38,6 +38,15 @@ def get_advisory(aqi: int) -> dict:
             return {"category": category, "color": color, "message": message, "aqi": aqi}
     return {"category": "Unknown", "color": "#64748b", "message": "AQI out of measurable range.", "aqi": aqi}
 
+
+
+@app.route('/manifest.json')
+def manifest():
+    return send_from_directory('static', 'manifest.json')
+
+@app.route('/sw.js')
+def sw():
+    return send_from_directory('static', 'sw.js')
 
 @app.route("/")
 def dashboard():

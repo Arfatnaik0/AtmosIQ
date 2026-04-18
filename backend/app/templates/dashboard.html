@@ -2,9 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#0b0c09">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AtmosIQ">
+  <link rel="apple-touch-icon" href="/static/logo.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AtmosIQ</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo.png') }}">
+  <link rel="icon" type="image/png" href="/static/logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -195,6 +201,31 @@
     <span>Byculla BMC Station</span>
   </footer>
 
-  <script src="{{ url_for('static', filename='main.js') }}"></script>
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js')
+        .then((registration) => {
+          console.log('SW registered:', registration);
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed') {
+                if (navigator.serviceWorker.controller) {
+                  console.log('New content is available; please refresh.');
+                } else {
+                  console.log('Content is cached for offline use.');
+                }
+              }
+            });
+          });
+        })
+        .catch((err) => {
+          console.log('SW registration failed:', err);
+        });
+    });
+  }
+</script>
+<script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
