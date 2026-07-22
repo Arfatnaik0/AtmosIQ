@@ -69,6 +69,9 @@ def extract_from_redis():
     prediction=model.predict(data)
     prediction=round(prediction[0])
 
+    if prediction<0:
+        prediction=0
+
     PM25_BP = [
     (0, 30, 0, 50),
     (30.01, 60, 51, 100),
