@@ -2,7 +2,7 @@
 
 AtmosIQ is an end-to-end air quality monitoring and forecasting system that collects real-time pollution data, predicts future PM-based AQI using a machine learning model, and visualizes insights through a modern web dashboard.
 
-The system is fully automated, scalable, and production-ready, combining GitHub Actions, Redis, Supabase, Flask, MLflow experiment tracking, and ML forecasting.
+The system is fully automated, scalable, and production-ready, combining GitHub Actions, Redis, Supabase, FastAPI, MLflow experiment tracking, and ML forecasting.
 
 ## 🚀 Live Demo
 
@@ -34,7 +34,7 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
 - ML-based AQI prediction (3 hours ahead)
 - MLflow experiment tracking — all training runs logged with MAE, RMSE and R² metrics for full model lineage
 - Persistent historical storage in Supabase
-- Redis-backed response caching shared across all Gunicorn workers
+- Redis-backed response caching shared across FastAPI workers
 - Real-time dashboard with:
   - PM2.5 & PM10 trends
   - Current AQI with category and health advisory
@@ -42,7 +42,7 @@ AtmosIQ prioritizes accuracy, availability, and real-world relevance.
   - Weather conditions (temperature, humidity, wind)
   - Model MAE scorecard
   - Daily AQI summary and worst-hours-of-day analysis
-- Dark industrial UI built with Flask + Chart.js
+- Dark industrial UI built with FastAPI + Chart.js
 - Zero manual intervention once deployed
 
 ## System Architecture
@@ -60,16 +60,16 @@ Feature Engineering + ML Prediction
         ↓
 Supabase (Persistent Database)
         ↓
-Flask API (Railway — Docker)
+FastAPI API (Railway — Docker)
         ↓
 Interactive Dashboard
 ```
 
 ### Data Flow Notes
 
-- Redis serves two purposes: a rolling 3-hour buffer inside GitHub Actions, and a shared response cache for Flask (via Flask-Caching)
+- Redis serves two purposes: a rolling 3-hour buffer inside GitHub Actions, and a shared response cache for FastAPI (via fastapi-cache2)
 - All writes to Supabase happen via GitHub Actions
-- Flask reads from Supabase and caches responses in Redis — it never writes sensor data
+- FastAPI reads from Supabase and caches responses in Redis — it never writes sensor data
 
 ## API Endpoints
 
@@ -123,10 +123,14 @@ The selected model (`xgb_aqi_model_3hr.pkl`) is the artifact from this winning r
 AtmosIQ/
 │
 ├── backend/
-│   ├── app/
-│   │   ├── app.py              # Flask app (API + dashboard)
-│   │   ├── dockerfile          # Docker image — app/ is the build root
+│   ├── fastapi_backend/
+│   │   ├── app.py              # FastAPI app (API + dashboard)
+│   │   ├── dockerfile          # Docker image definition
 │   │   ├── requirements.txt
+│   │   └── models/
+│   │       └── model.py        # Pydantic response models
+│   │
+│   ├── frontend/
 │   │   ├── templates/
 │   │   │   └── dashboard.html
 │   │   └── static/
@@ -154,7 +158,7 @@ AtmosIQ/
 └── README.md
 ```
 
-> **Deployment note:** Railway is configured with `backend/app` as the root directory, so the `dockerfile` at that path is picked up directly as the build context.
+> **Deployment note:** Build from the repository root with `backend/fastapi_backend/dockerfile`. The Dockerfile copies both the FastAPI backend and the sibling `backend/frontend` directory.
 
 ## Automation Pipeline (GitHub Actions)
 
@@ -171,11 +175,11 @@ AtmosIQ/
 | Data Source | OpenWeather API |
 | Scheduler | GitHub Actions (Cron) |
 | Cache (buffer) | Redis — Upstash (GitHub Actions rolling window) |
-| Cache (API) | Redis — Railway instance via Flask-Caching |
+| Cache (API) | Redis — Railway instance via fastapi-cache2 |
 | ML | XGBoost |
 | Experiment Tracking | MLflow |
 | Database | Supabase (PostgreSQL) |
-| Backend | Flask + Gunicorn |
+| Backend | FastAPI + Uvicorn |
 | Frontend | HTML, CSS, JavaScript |
 | Charts | Chart.js |
 | Hosting | Railway (Docker) |

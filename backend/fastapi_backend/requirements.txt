@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+jinja2
+fastapi-cache2[redis]
+requests
+redis
+supabase
+pytz
+pandas
+joblib
+scikit-learn
+python-dotenv

@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PORT=8000
+
+WORKDIR /app/backend/fastapi_backend
+
+COPY backend/fastapi_backend/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY backend/fastapi_backend/app.py ./app.py
+COPY backend/fastapi_backend/models ./models
+COPY backend/frontend ../frontend
+
+RUN adduser --uid 5678 --disabled-password --gecos "" appuser \
+    && chown -R appuser /app
+USER appuser
+
+CMD ["sh", "-c", "exec uvicorn app:app --host 0.0.0.0 --port ${PORT}"]
